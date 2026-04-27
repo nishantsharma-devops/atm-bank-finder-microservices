@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 
 const defaultCoords = { lat: 28.6139, lng: 77.209 };
+const storedToken = window.localStorage.getItem("atmFinderToken");
+const storedUser = window.localStorage.getItem("atmFinderUser");
 
 function createUserIcon() {
   return L.divIcon({
@@ -28,8 +30,19 @@ export default function App() {
   const [coords, setCoords] = useState(null);
   const [type, setType] = useState("all");
   const [radius, setRadius] = useState("6");
+  const [searchText, setSearchText] = useState("");
+  const [cityFilter, setCityFilter] = useState("");
+  const [bankFilter, setBankFilter] = useState("");
   const [serviceStatus, setServiceStatus] = useState("Checking services...");
   const [streamStatus, setStreamStatus] = useState("Stream idle");
+  const [authMode, setAuthMode] = useState("login");
+  const [authToken, setAuthToken] = useState(storedToken || "");
+  const [user, setUser] = useState(storedUser ? JSON.parse(storedUser) : null);
+  const [authForm, setAuthForm] = useState({
+    name: "",
+    email: "demo@atmfinder.dev",
+    password: "demo1234"
+  });
   const [cityMeta, setCityMeta] = useState({
     city: "Waiting for location",
     hint: "Allow location access to get nearby suggestions.",
@@ -38,6 +51,7 @@ export default function App() {
   const [summary, setSummary] = useState({ total: 0, breakdown: [] });
   const [places, setPlaces] = useState([]);
   const [error, setError] = useState("");
+  const [authError, setAuthError] = useState("");
 
   useEffect(() => {
     const map = L.map(mapNodeRef.current, {
@@ -62,7 +76,7 @@ export default function App() {
       .then((response) => response.json())
       .then((payload) => {
         const healthyCount = payload.services.filter((service) => service.status === "ok").length;
-        setServiceStatus(`${healthyCount}/3 services live`);
+        setServiceStatus(`${healthyCount}/${payload.services.length} services live`);
       })
       .catch(() => {
         setServiceStatus("Services unavailable");
@@ -75,6 +89,32 @@ export default function App() {
         setSummary({ total: 0, breakdown: [] });
       });
   }, []);
+
+  useEffect(() => {
+    if (!authToken) {
+      return;
+    }
+
+    fetch("/api/auth/me", {
+      headers: {
+        Authorization: `Bearer ${authToken}`
+      }
+    })
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.message || "Session restore failed.");
+        }
+        setUser(payload.user);
+        window.localStorage.setItem("atmFinderUser", JSON.stringify(payload.user));
+      })
+      .catch(() => {
+        setAuthToken("");
+        setUser(null);
+        window.localStorage.removeItem("atmFinderToken");
+        window.localStorage.removeItem("atmFinderUser");
+      });
+  }, [authToken]);
 
   useEffect(() => {
     if (!coords) {
@@ -106,7 +146,10 @@ export default function App() {
       lat: coords.lat,
       lng: coords.lng,
       radius,
-      type
+      type,
+      q: searchText,
+      city: cityFilter,
+      bank: bankFilter
     });
 
     fetch(`/api/places/nearby?${params.toString()}`)
@@ -118,7 +161,7 @@ export default function App() {
       .catch(() => {
         setError("Nearby search failed. Check service setup.");
       });
-  }, [coords, radius, type]);
+  }, [coords, radius, type, searchText, cityFilter, bankFilter]);
 
   useEffect(() => {
     if (!coords) {
@@ -133,7 +176,10 @@ export default function App() {
       lat: coords.lat,
       lng: coords.lng,
       radius,
-      type
+      type,
+      q: searchText,
+      city: cityFilter,
+      bank: bankFilter
     });
 
     const stream = new EventSource(`/api/realtime/stream?${params.toString()}`);
@@ -153,7 +199,7 @@ export default function App() {
     return () => {
       stream.close();
     };
-  }, [coords, radius, type]);
+  }, [coords, radius, type, searchText, cityFilter, bankFilter]);
 
   useEffect(() => {
     if (!mapRef.current) {
@@ -219,6 +265,54 @@ export default function App() {
     );
   }
 
+  function handleAuthFieldChange(event) {
+    const { name, value } = event.target;
+    setAuthForm((current) => ({
+      ...current,
+      [name]: value
+    }));
+  }
+
+  async function handleAuthSubmit(event) {
+    event.preventDefault();
+    setAuthError("");
+
+    const endpoint = authMode === "login" ? "/api/auth/login" : "/api/auth/signup";
+    const body =
+      authMode === "login"
+        ? { email: authForm.email, password: authForm.password }
+        : { name: authForm.name, email: authForm.email, password: authForm.password };
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.message || "Authentication failed.");
+      }
+
+      setAuthToken(payload.token);
+      setUser(payload.user);
+      window.localStorage.setItem("atmFinderToken", payload.token);
+      window.localStorage.setItem("atmFinderUser", JSON.stringify(payload.user));
+    } catch (authRequestError) {
+      setAuthError(authRequestError.message);
+    }
+  }
+
+  function handleLogout() {
+    setAuthToken("");
+    setUser(null);
+    window.localStorage.removeItem("atmFinderToken");
+    window.localStorage.removeItem("atmFinderUser");
+  }
+
   return (
     <div className="page-shell">
       <header className="hero">
@@ -232,12 +326,25 @@ export default function App() {
           <div className="hero-actions">
             <button onClick={handleLocate}>Use My Location</button>
             <span className="status-pill">{serviceStatus}</span>
+            {user ? <span className="status-pill">Signed in as {user.name}</span> : null}
           </div>
           {error ? <p className="error-line">{error}</p> : null}
         </div>
 
         <div className="hero-panel">
           <div className="control-grid">
+            <label>
+              Smart search
+              <input value={searchText} onChange={(event) => setSearchText(event.target.value)} placeholder="Try SBI, Bandra, ATM" />
+            </label>
+            <label>
+              City filter
+              <input value={cityFilter} onChange={(event) => setCityFilter(event.target.value)} placeholder="Delhi NCR, Mumbai" />
+            </label>
+            <label>
+              Bank filter
+              <input value={bankFilter} onChange={(event) => setBankFilter(event.target.value)} placeholder="HDFC, SBI, ICICI" />
+            </label>
             <label>
               Service type
               <select value={type} onChange={(event) => setType(event.target.value)}>
@@ -289,6 +396,36 @@ export default function App() {
         </section>
 
         <section className="results-card">
+          <div className="auth-card">
+            <div className="auth-card-header">
+              <h2>{user ? "Account" : authMode === "login" ? "Login" : "Create account"}</h2>
+              {!user ? (
+                <button className="ghost-button" onClick={() => setAuthMode(authMode === "login" ? "signup" : "login")}>
+                  {authMode === "login" ? "Need signup?" : "Have login?"}
+                </button>
+              ) : null}
+            </div>
+
+            {user ? (
+              <div className="auth-summary">
+                <p><strong>{user.name}</strong></p>
+                <p>{user.email}</p>
+                <button className="ghost-button" onClick={handleLogout}>Logout</button>
+              </div>
+            ) : (
+              <form className="auth-form" onSubmit={handleAuthSubmit}>
+                {authMode === "signup" ? (
+                  <input name="name" value={authForm.name} onChange={handleAuthFieldChange} placeholder="Your name" />
+                ) : null}
+                <input name="email" value={authForm.email} onChange={handleAuthFieldChange} placeholder="Email" />
+                <input name="password" type="password" value={authForm.password} onChange={handleAuthFieldChange} placeholder="Password" />
+                <button type="submit">{authMode === "login" ? "Login" : "Signup"}</button>
+                <p className="auth-hint">Demo login: demo@atmfinder.dev / demo1234</p>
+                {authError ? <p className="error-line">{authError}</p> : null}
+              </form>
+            )}
+          </div>
+
           <div className="results-header">
             <h2>Nearby Results</h2>
             <p>{coords ? `${places.length} result(s) in ${radius} km radius` : "Location search not started yet."}</p>

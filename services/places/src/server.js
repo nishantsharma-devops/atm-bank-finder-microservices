@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const { Op } = require("sequelize");
 const { distanceInKm, normalizeCoordinates } = require("@atm-finder/shared");
 const { Place, sequelize } = require("./store");
 
@@ -17,9 +18,18 @@ app.get("/places/nearby", async (req, res) => {
     const { lat, lng } = normalizeCoordinates(req.query.lat, req.query.lng);
     const radius = Number(req.query.radius || 6);
     const type = (req.query.type || "all").toLowerCase();
+    const q = (req.query.q || "").trim().toLowerCase();
+    const city = (req.query.city || "").trim();
+    const bank = (req.query.bank || "").trim();
+    const availability = (req.query.availability || "").trim();
 
     const records = await Place.findAll({
-      where: type === "all" ? {} : { type },
+      where: {
+        ...(type === "all" ? {} : { type }),
+        ...(city ? { city: { [Op.like]: `%${city}%` } } : {}),
+        ...(bank ? { bank: { [Op.like]: `%${bank}%` } } : {}),
+        ...(availability ? { availability: { [Op.like]: `%${availability}%` } } : {})
+      },
       order: [
         ["city", "ASC"],
         ["name", "ASC"]
@@ -34,11 +44,19 @@ app.get("/places/nearby", async (req, res) => {
           distanceKm: Number(distanceInKm(lat, lng, place.lat, place.lng).toFixed(2))
         };
       })
+      .filter((place) => {
+        if (!q) {
+          return true;
+        }
+
+        const haystack = `${place.name} ${place.address} ${place.bank} ${place.city}`.toLowerCase();
+        return haystack.includes(q);
+      })
       .filter((place) => place.distanceKm <= radius)
       .sort((first, second) => first.distanceKm - second.distanceKm);
 
     res.json({
-      query: { lat, lng, radius, type },
+      query: { lat, lng, radius, type, q, city, bank, availability },
       total: results.length,
       results
     });

@@ -4,6 +4,7 @@ const path = require("path");
 
 const app = express();
 const port = Number(process.env.GATEWAY_PORT || 3000);
+const authServiceUrl = process.env.AUTH_SERVICE_URL || "http://localhost:3004";
 const placesServiceUrl = process.env.PLACES_SERVICE_URL || "http://localhost:3001";
 const locationServiceUrl = process.env.LOCATION_SERVICE_URL || "http://localhost:3002";
 const realtimeServiceUrl = process.env.REALTIME_SERVICE_URL || "http://localhost:3003";
@@ -13,15 +14,31 @@ if (fs.existsSync(frontendDistPath)) {
   app.use(express.static(frontendDistPath));
 }
 
+app.use(express.json());
+
 async function proxyJson(res, targetUrl) {
   const response = await fetch(targetUrl);
   const payload = await response.text();
   res.status(response.status).type(response.headers.get("content-type") || "application/json").send(payload);
 }
 
+async function proxyRequest(req, res, targetUrl, options = {}) {
+  const response = await fetch(targetUrl, {
+    method: options.method || req.method,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: req.headers.authorization || ""
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined
+  });
+  const payload = await response.text();
+  res.status(response.status).type(response.headers.get("content-type") || "application/json").send(payload);
+}
+
 app.get("/api/health", async (_req, res) => {
   try {
-    const [places, location, realtime] = await Promise.all([
+    const [auth, places, location, realtime] = await Promise.all([
+      fetch(`${authServiceUrl}/health`).then((response) => response.json()),
       fetch(`${placesServiceUrl}/health`).then((response) => response.json()),
       fetch(`${locationServiceUrl}/health`).then((response) => response.json()),
       fetch(`${realtimeServiceUrl}/health`).then((response) => response.json())
@@ -29,11 +46,29 @@ app.get("/api/health", async (_req, res) => {
 
     res.json({
       gateway: "ok",
-      services: [places, location, realtime]
+      services: [auth, places, location, realtime]
     });
   } catch (error) {
     res.status(500).json({ gateway: "degraded", detail: error.message });
   }
+});
+
+app.post("/api/auth/signup", async (req, res) => {
+  await proxyRequest(req, res, `${authServiceUrl}/auth/signup`, {
+    method: "POST",
+    body: req.body
+  });
+});
+
+app.post("/api/auth/login", async (req, res) => {
+  await proxyRequest(req, res, `${authServiceUrl}/auth/login`, {
+    method: "POST",
+    body: req.body
+  });
+});
+
+app.get("/api/auth/me", async (req, res) => {
+  await proxyRequest(req, res, `${authServiceUrl}/auth/me`);
 });
 
 app.get("/api/places/summary", async (_req, res) => {

@@ -9,15 +9,16 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev -w @atm-finder/frontend\" \"npm run dev -w @atm-finder/gateway\" \"npm run dev -w @atm-finder/places\" \"npm run dev -w @atm-finder/location\" \"npm run dev -w @atm-finder/realtime\"",
+    "dev": "concurrently \"npm run dev -w @atm-finder/frontend\" \"npm run dev -w @atm-finder/gateway\" \"npm run dev -w @atm-finder/auth\" \"npm run dev -w @atm-finder/places\" \"npm run dev -w @atm-finder/location\" \"npm run dev -w @atm-finder/realtime\"",
     "build": "npm run build -w @atm-finder/frontend",
-    "db:prepare": "npm run db:prepare -w @atm-finder/places",
+    "db:prepare": "npm run db:prepare -w @atm-finder/places && npm run db:prepare -w @atm-finder/auth",
     "dev:frontend": "npm run dev -w @atm-finder/frontend",
     "dev:gateway": "npm run dev -w @atm-finder/gateway",
+    "dev:auth": "npm run dev -w @atm-finder/auth",
     "dev:places": "npm run dev -w @atm-finder/places",
     "dev:location": "npm run dev -w @atm-finder/location",
     "dev:realtime": "npm run dev -w @atm-finder/realtime",
-    "start": "concurrently \"npm run start -w @atm-finder/gateway\" \"npm run start -w @atm-finder/places\" \"npm run start -w @atm-finder/location\" \"npm run start -w @atm-finder/realtime\""
+    "start": "concurrently \"npm run start -w @atm-finder/gateway\" \"npm run start -w @atm-finder/auth\" \"npm run start -w @atm-finder/places\" \"npm run start -w @atm-finder/location\" \"npm run start -w @atm-finder/realtime\""
   },
   "dependencies": {
     "concurrently": "^9.1.2"

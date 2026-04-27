@@ -26,7 +26,8 @@ body {
 }
 
 button,
-select {
+select,
+input {
   font: inherit;
 }
 
@@ -96,6 +97,15 @@ button {
   cursor: pointer;
 }
 
+input,
+select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 12px 14px;
+  background: white;
+}
+
 .status-pill,
 .stream-badge,
 .tag {
@@ -134,14 +144,6 @@ label {
   display: grid;
   gap: 8px;
   color: var(--muted);
-}
-
-select {
-  width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 12px 14px;
-  background: white;
 }
 
 .meta-row {
@@ -205,6 +207,44 @@ select {
 
 .results-card {
   padding: 22px;
+}
+
+.auth-card {
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.auth-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.auth-card-header h2 {
+  margin: 0;
+}
+
+.auth-form,
+.auth-summary {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.auth-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.ghost-button {
+  background: transparent;
+  color: var(--accent-deep);
+  border: 1px solid var(--line);
 }
 
 .results-header h2 {
