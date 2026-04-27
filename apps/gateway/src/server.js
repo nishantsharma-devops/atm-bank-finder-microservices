@@ -1,4 +1,5 @@
 const express = require("express");
+const fs = require("fs");
 const path = require("path");
 
 const app = express();
@@ -6,9 +7,11 @@ const port = Number(process.env.GATEWAY_PORT || 3000);
 const placesServiceUrl = process.env.PLACES_SERVICE_URL || "http://localhost:3001";
 const locationServiceUrl = process.env.LOCATION_SERVICE_URL || "http://localhost:3002";
 const realtimeServiceUrl = process.env.REALTIME_SERVICE_URL || "http://localhost:3003";
-const frontendPath = path.resolve(__dirname, "../../frontend/public");
+const frontendDistPath = path.resolve(__dirname, "../../frontend/dist");
 
-app.use(express.static(frontendPath));
+if (fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
+}
 
 async function proxyJson(res, targetUrl) {
   const response = await fetch(targetUrl);
@@ -31,6 +34,11 @@ app.get("/api/health", async (_req, res) => {
   } catch (error) {
     res.status(500).json({ gateway: "degraded", detail: error.message });
   }
+});
+
+app.get("/api/places/summary", async (_req, res) => {
+  const targetUrl = `${placesServiceUrl}/places/summary`;
+  await proxyJson(res, targetUrl);
 });
 
 app.get("/api/places/nearby", async (req, res) => {
@@ -67,7 +75,14 @@ app.get("/api/realtime/stream", async (req, res) => {
 });
 
 app.get("*", (_req, res) => {
-  res.sendFile(path.join(frontendPath, "index.html"));
+  if (fs.existsSync(path.join(frontendDistPath, "index.html"))) {
+    res.sendFile(path.join(frontendDistPath, "index.html"));
+    return;
+  }
+
+  res.status(200).json({
+    message: "Gateway is running. Start the React client on http://localhost:5173 for development."
+  });
 });
 
 app.listen(port, () => {

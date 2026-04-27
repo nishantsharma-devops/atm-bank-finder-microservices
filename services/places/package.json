@@ -4,12 +4,15 @@
   "private": true,
   "main": "src/server.js",
   "scripts": {
+    "db:prepare": "node src/setupDatabase.js",
     "dev": "node --watch src/server.js",
     "start": "node src/server.js"
   },
   "dependencies": {
     "@atm-finder/shared": "1.0.0",
     "cors": "^2.8.5",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "sequelize": "^6.37.7",
+    "sqlite3": "^5.1.7"
   }
 }

@@ -9,7 +9,10 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev -w @atm-finder/gateway\" \"npm run dev -w @atm-finder/places\" \"npm run dev -w @atm-finder/location\" \"npm run dev -w @atm-finder/realtime\"",
+    "dev": "concurrently \"npm run dev -w @atm-finder/frontend\" \"npm run dev -w @atm-finder/gateway\" \"npm run dev -w @atm-finder/places\" \"npm run dev -w @atm-finder/location\" \"npm run dev -w @atm-finder/realtime\"",
+    "build": "npm run build -w @atm-finder/frontend",
+    "db:prepare": "npm run db:prepare -w @atm-finder/places",
+    "dev:frontend": "npm run dev -w @atm-finder/frontend",
     "dev:gateway": "npm run dev -w @atm-finder/gateway",
     "dev:places": "npm run dev -w @atm-finder/places",
     "dev:location": "npm run dev -w @atm-finder/location",
