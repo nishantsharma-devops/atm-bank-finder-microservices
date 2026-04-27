@@ -1,0 +1,22 @@
+{
+  "name": "atm-bank-finder-microservices",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Real-time ATM and bank finder built with a microservices-style Node.js monorepo.",
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w @atm-finder/gateway\" \"npm run dev -w @atm-finder/places\" \"npm run dev -w @atm-finder/location\" \"npm run dev -w @atm-finder/realtime\"",
+    "dev:gateway": "npm run dev -w @atm-finder/gateway",
+    "dev:places": "npm run dev -w @atm-finder/places",
+    "dev:location": "npm run dev -w @atm-finder/location",
+    "dev:realtime": "npm run dev -w @atm-finder/realtime",
+    "start": "concurrently \"npm run start -w @atm-finder/gateway\" \"npm run start -w @atm-finder/places\" \"npm run start -w @atm-finder/location\" \"npm run start -w @atm-finder/realtime\""
+  },
+  "dependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

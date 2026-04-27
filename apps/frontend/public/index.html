@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ATM and Bank Finder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Realtime Banking Discovery</p>
+          <h1>Find nearby ATMs and banks with a live microservices workflow.</h1>
+          <p class="hero-text">
+            Location context, nearby search, and realtime refresh are handled by separate services behind a single gateway.
+          </p>
+          <div class="hero-actions">
+            <button id="locateButton">Use My Location</button>
+            <span id="serviceStatus" class="status-pill">Checking services...</span>
+          </div>
+        </div>
+        <div class="hero-panel">
+          <div class="control-grid">
+            <label>
+              Service type
+              <select id="typeSelect">
+                <option value="all">ATM + Bank</option>
+                <option value="atm">ATM only</option>
+                <option value="bank">Bank only</option>
+              </select>
+            </label>
+            <label>
+              Radius
+              <select id="radiusSelect">
+                <option value="3">3 km</option>
+                <option value="6" selected>6 km</option>
+                <option value="10">10 km</option>
+                <option value="20">20 km</option>
+              </select>
+            </label>
+          </div>
+          <div class="meta-row">
+            <div>
+              <strong id="cityLabel">Waiting for location</strong>
+              <p id="hintLabel">Allow location access to get nearby suggestions.</p>
+            </div>
+            <div class="stream-badge">
+              <span class="dot"></span>
+              <span id="streamStatus">Stream idle</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="content-grid">
+        <section class="map-card">
+          <div id="map"></div>
+        </section>
+        <section class="results-card">
+          <div class="results-header">
+            <h2>Nearby Results</h2>
+            <p id="resultsMeta">No search started yet.</p>
+          </div>
+          <div id="resultsList" class="results-list"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>
