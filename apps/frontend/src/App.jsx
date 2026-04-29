@@ -318,7 +318,7 @@ export default function App() {
       <header className="hero">
         <div className="hero-copy">
           <p className="eyebrow">Advanced Microservices Stack</p>
-          <h1>Realtime ATM and bank finder with React, Express, Sequelize, and SSE.</h1>
+          <h1>Find nearby ATMs & banks instantly.</h1>
           <p className="hero-text">
             This frontend talks to a gateway, which fans out to location, places, and realtime services. Places are now
             served from a database-backed service instead of a static array.
