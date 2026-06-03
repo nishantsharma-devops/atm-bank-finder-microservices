@@ -1,0 +1,88 @@
+services:
+  gateway:
+    image: gateway:latest
+    container_name: gateway
+    ports:
+     - "3000:3000"
+    environment:
+     GATEWAY_PORT: ${GATEWAY_PORT}
+     AUTH_SERVICE_URL: ${AUTH_SERVICE_URL}
+     PLACES_SERVICE_URL: ${PLACES_SERVICE_URL}
+     LOCATION_SERVICE_URL: ${LOCATION_SERVICE_URL}
+     REALTIME_SERVICE_URL: ${REALTIME_SERVICE_URL}
+     ENVIRONMENT: ${ENVIRONMENT}
+     LOG_LEVEL: ${LOG_LEVEL}
+    
+    depends_on:
+      - realtime
+      - loc
+      - auth
+      - place  
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s   
+
+  auth:
+    image: auth-service:latest
+    container_name: auth-service
+    ports:
+     - "3004:3004"
+    healthcheck:
+     test: ["CMD", "wget", "-qO-", "http://localhost:3004/health"]
+     interval: 30s
+     timeout: 10s
+     retries: 3
+     start_period: 10s
+
+  loc:
+    image: loc-service:latest
+    container_name: loc-service
+    ports:
+     - "3002:3002"
+    healthcheck:
+     test: ["CMD", "wget", "-qO-", "http://localhost:3002/health"]
+     interval: 30s
+     timeout: 10s
+     retries: 3
+     start_period: 10s 
+
+  realtime:
+   image: realtime:latest
+   container_name: realtime
+   ports:
+   - "3003:3003"
+   healthcheck:
+     test: ["CMD", "wget", "-qO-", "http://localhost:3003/health"]
+     interval: 30s
+     timeout: 10s
+     retries: 3
+     start_period: 10s
+
+  place:
+   image: places-service:latest
+   container_name: place-service
+   ports:
+    - "3001:3001"
+   healthcheck:
+    test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 10s 
+
+  frontend:
+   image: frontend-service:latest
+   container_name: frontend-service
+   ports:
+    - "5173:5173"
+   depends_on:
+    - gateway 
+   healthcheck:
+    test: ["CMD", "wget", "-qO-", "http://localhost:5173"]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 10s  
